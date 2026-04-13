@@ -26,22 +26,4 @@ A comprehensive electronics laws calculator covering all major laws used in circ
 3. **Enter the known values**
 4. **Get the result** with all related quantities shown
 
-## 🚀 Deploy on GitHub Pages
-
-1. Upload this repo to GitHub
-2. Go to **Settings → Pages → Source: main / (root)**
-3. Live at `https://yourusername.github.io/electronics-calc`
-
-## 🛠 Tech Stack
-
-- Pure HTML, CSS, JavaScript — zero dependencies
-- Single `index.html` file
-- Works offline, no internet needed after load (except Google Fonts)
-
-## 📁 Structure
-
-```
-electronics-calc/
-├── index.html
-└── README.md
-```
+## This is my third project 
