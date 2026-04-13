@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ElectraCalc — Electronics Laws Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080c10;
+      --surface: #0d1219;
+      --card: #111720;
+      --border: #1c2535;
+      --border2: #243040;
+      --accent: #00d4ff;
+      --accent2: #ff6b35;
+      --accent3: #7fff6b;
+      --accent4: #ffcc00;
+      --accent5: #c97bff;
+      --text: #e2eaf5;
+      --muted: #4a6080;
+      --muted2: #2a3a50;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 36px 16px 80px;
+      overflow-x: hidden;
+    }
+
+    /* Circuit board pattern background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+    }
+
+    /* Glow orbs */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(80px);
+    }
+    .orb1 { width:500px;height:500px;background:rgba(0,212,255,0.05);top:-200px;left:-100px; }
+    .orb2 { width:400px;height:400px;background:rgba(255,107,53,0.04);bottom:-150px;right:-100px; }
+
+    /* ── HEADER ── */
+    header {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      margin-bottom: 44px;
+    }
+
+    .logo-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0,212,255,0.08);
+      border: 1px solid rgba(0,212,255,0.2);
+      border-radius: 6px;
+      padding: 5px 14px;
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .logo-chip::before { content:'⬡'; font-size:14px; }
+
+    h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 900;
+      letter-spacing: 2px;
+      line-height: 1.1;
+    }
+
+    h1 .hi { color: var(--accent); }
+    h1 .lo { color: var(--text); }
+
+    .sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 10px;
+      letter-spacing: 1px;
+    }
+
+    /* ── MAIN CONTAINER ── */
+    .wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 820px;
+    }
+
+    /* Step indicator */
+    .steps {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 28px;
+      justify-content: center;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      letter-spacing: 1px;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .step.active { color: var(--accent); }
+    .step.done { color: var(--accent3); }
+
+    .step-num {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      border: 1.5px solid currentColor;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Orbitron', monospace;
+      font-size: 11px;
+    }
+
+    .step.done .step-num { background: rgba(127,255,107,0.15); }
+    .step.active .step-num { background: rgba(0,212,255,0.15); }
+
+    .step-line {
+      width: 40px;
+      height: 1px;
+      background: var(--border2);
+      margin: 0 8px;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent 60%);
+    }
+
+    .card-label {
+      font-family: 'Orbitron', monospace;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── LAW GRID ── */
+    .law-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .law-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .law-btn:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .law-btn:hover::before { opacity: 1; }
+
+    .law-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(0,212,255,0.05), transparent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .law-btn.selected {
+      border-color: var(--accent);
+      background: rgba(0,212,255,0.08);
+    }
+
+    .law-icon {
+      font-size: 20px;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .law-name {
+      font-family: 'Orbitron', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .law-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .law-tag {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 100px;
+      border: 1px solid var(--border2);
+      color: var(--muted);
+      letter-spacing: 1px;
+    }
+
+    /* ── VARIANT SELECTOR (which formula) ── */
+    .variant-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .var-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      cursor: pointer;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--muted);
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .var-btn:hover { border-color: var(--accent4); color: var(--text); }
+    .var-btn.selected { border-color: var(--accent4); background: rgba(255,204,0,0.07); color: var(--accent4); }
+
+    .var-formula {
+      font-family: 'Orbitron', monospace;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .var-solve {
+      font-size: 11px;
+      letter-spacing: 1px;
+      opacity: 0.7;
+    }
+
+    /* ── INPUTS ── */
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .field label span {
+      font-family: 'Orbitron', monospace;
+      color: var(--accent);
+      font-size: 13px;
+    }
+
+    .inp-wrap { position: relative; }
+
+    .field input {
+      width: 100%;
+      background: var(--surface);
+      border: 1.5px solid var(--border2);
+      border-radius: 10px;
+      padding: 12px 52px 12px 14px;
+      font-family: 'Orbitron', monospace;
+      font-size: 1rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -moz-appearance: textfield;
+    }
+
+    .field input::-webkit-outer-spin-button,
+    .field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .field input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,212,255,0.1);
+    }
+
+    .inp-unit {
+      position: absolute;
+      right: 12px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'Orbitron', monospace;
+      pointer-events: none;
+    }
+
+    /* ── CALCULATE BTN ── */
+    .calc-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--accent), #0099cc);
+      color: #000;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Orbitron', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 4px;
+    }
+
+    .calc-btn:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,212,255,0.3); }
+    .calc-btn:active { transform: none; }
+
+    /* ── RESULT ── */
+    .result-card {
+      display: none;
+      animation: slideIn 0.4s ease;
+    }
+
+    .result-card.visible { display: block; }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-card::before { background: linear-gradient(90deg, var(--accent3), transparent 60%); }
+
+    .result-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .result-main { flex: 1; }
+
+    .result-label {
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .result-value {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 700;
+      color: var(--accent3);
+      line-height: 1;
+    }
+
+    .result-unit {
+      font-size: 1.2rem;
+      color: var(--muted);
+      margin-left: 6px;
+    }
+
+    .result-meta {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .result-formula-box {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      padding: 16px 20px;
+      text-align: center;
+      min-width: 160px;
+    }
+
+    .rfl { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin-bottom: 6px; }
+    .rfv {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.1rem;
+      color: var(--accent4);
+      font-weight: 700;
+    }
+
+    /* All results row */
+    .all-results {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .mini-result {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .mr-label {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .mr-value {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .mr-unit { font-size: 11px; color: var(--muted); }
+
+    /* ── NAV BUTTONS ── */
+    .nav-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .back-btn {
+      flex: 1;
+      padding: 12px;
+      background: transparent;
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      color: var(--muted);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+
+    .back-btn:hover { border-color: var(--text); color: var(--text); }
+
+    .reset-btn {
+      padding: 12px 24px;
+      background: transparent;
+      border: 1px solid rgba(255,107,53,0.3);
+      border-radius: 10px;
+      color: var(--accent2);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+
+    .reset-btn:hover { background: rgba(255,107,53,0.08); border-color: var(--accent2); }
+
+    /* ── HIDDEN ── */
+    .hidden { display: none !important; }
+
+    footer {
+      position: relative;
+      z-index: 1;
+      margin-top: 48px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<header>
+  <div class="logo-chip">Electronics Laws</div>
+  <h1><span class="hi">ELECTRA</span><span class="lo">CALC</span></h1>
+  <p class="sub">Select a law → Choose formula → Enter values → Get result</p>
+</header>
+
+<div class="wrap">
+
+  <!-- Step Indicator -->
+  <div class="steps">
+    <div class="step active" id="s1"><div class="step-num">1</div> Select Law</div>
+    <div class="step-line"></div>
+    <div class="step" id="s2"><div class="step-num">2</div> Choose Formula</div>
+    <div class="step-line"></div>
+    <div class="step" id="s3"><div class="step-num">3</div> Enter Values</div>
+    <div class="step-line"></div>
+    <div class="step" id="s4"><div class="step-num">4</div> Result</div>
+  </div>
+
+  <!-- ── STEP 1: Select Law ── -->
+  <div id="step1">
+    <div class="card">
+      <div class="card-label">Choose Electronics Law</div>
+      <div class="law-grid" id="lawGrid"></div>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: Choose Formula Variant ── -->
+  <div id="step2" class="hidden">
+    <div class="card">
+      <div class="card-label" id="variantTitle">Choose Formula</div>
+      <div class="variant-grid" id="variantGrid"></div>
+    </div>
+    <div class="nav-row">
+      <button class="back-btn" onclick="goStep(1)">← Back to Laws</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: Enter Values ── -->
+  <div id="step3" class="hidden">
+    <div class="card">
+      <div class="card-label" id="inputTitle">Enter Known Values</div>
+      <div class="input-grid" id="inputGrid"></div>
+      <br/>
+      <button class="calc-btn" onclick="calculate()">⚡ CALCULATE</button>
+      <p style="font-size:12px;color:var(--muted);margin-top:10px;text-align:center;" id="errorMsg"></p>
+    </div>
+    <div class="nav-row">
+      <button class="back-btn" onclick="goStep(2)">← Back to Formula</button>
+      <button class="reset-btn" onclick="goStep(1)">⟳ Reset</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: Result ── -->
+  <div id="step4" class="hidden result-card card">
+    <div class="card-label">Result</div>
+    <div class="result-inner">
+      <div class="result-main">
+        <div class="result-label" id="resLabel">Calculated Value</div>
+        <div>
+          <span class="result-value" id="resValue">—</span>
+          <span class="result-unit" id="resUnit"></span>
+        </div>
+        <div class="result-meta" id="resMeta"></div>
+      </div>
+      <div class="result-formula-box">
+        <div class="rfl">FORMULA USED</div>
+        <div class="rfv" id="resFormula">—</div>
+      </div>
+    </div>
+    <div class="all-results" id="allResults"></div>
+    <br/>
+    <div class="nav-row">
+      <button class="back-btn" onclick="goStep(3)">← Recalculate</button>
+      <button class="reset-btn" onclick="goStep(1)">⟳ New Calculation</button>
+    </div>
+  </div>
+
+</div>
+
+<footer>Pure HTML · CSS · JS &nbsp;·&nbsp; No APIs · No Database · 100% Free · Deploy on GitHub Pages</footer>
+
+<script>
+// ═══════════════════════════════════════════════
+//  DATA: All Electronics Laws
+// ═══════════════════════════════════════════════
+const LAWS = [
+  {
+    id: 'ohm',
+    icon: '⚡',
+    name: "Ohm's Law",
+    desc: "Relationship between Voltage, Current and Resistance",
+    tag: "V = I·R",
+    variants: [
+      { label: "Find Voltage", formula: "V = I × R", solve: "SOLVE FOR V",
+        inputs: [
+          { id:'I', label:'Current', symbol:'I', unit:'A', ph:'2.5' },
+          { id:'R', label:'Resistance', symbol:'R', unit:'Ω', ph:'100' }
+        ],
+        calc: (v) => ({ result: v.I * v.R, unit:'V', name:'Voltage', formula:'V = I × R',
+          all: [ {l:'Voltage (V)', v: (v.I*v.R).toFixed(4), u:'V'}, {l:'Current (I)', v:v.I, u:'A'}, {l:'Resistance (R)', v:v.R, u:'Ω'} ] })
+      },
+      { label: "Find Current", formula: "I = V / R", solve: "SOLVE FOR I",
+        inputs: [
+          { id:'V', label:'Voltage', symbol:'V', unit:'V', ph:'12' },
+          { id:'R', label:'Resistance', symbol:'R', unit:'Ω', ph:'100' }
+        ],
+        calc: (v) => ({ result: v.V / v.R, unit:'A', name:'Current', formula:'I = V / R',
+          all: [ {l:'Current (I)', v:(v.V/v.R).toFixed(6), u:'A'}, {l:'Voltage (V)', v:v.V, u:'V'}, {l:'Resistance (R)', v:v.R, u:'Ω'} ] })
+      },
+      { label: "Find Resistance", formula: "R = V / I", solve: "SOLVE FOR R",
+        inputs: [
+          { id:'V', label:'Voltage', symbol:'V', unit:'V', ph:'12' },
+          { id:'I', label:'Current', symbol:'I', unit:'A', ph:'0.12' }
+        ],
+        calc: (v) => ({ result: v.V / v.I, unit:'Ω', name:'Resistance', formula:'R = V / I',
+          all: [ {l:'Resistance (R)', v:(v.V/v.I).toFixed(4), u:'Ω'}, {l:'Voltage (V)', v:v.V, u:'V'}, {l:'Current (I)', v:v.I, u:'A'} ] })
+      }
+    ]
+  },
+  {
+    id: 'power',
+    icon: '🔋',
+    name: "Electric Power Law",
+    desc: "Power consumed or delivered in a circuit",
+    tag: "P = V·I",
+    variants: [
+      { label: "P = V × I", formula: "P = V × I", solve: "SOLVE FOR P",
+        inputs: [
+          { id:'V', label:'Voltage', symbol:'V', unit:'V', ph:'12' },
+          { id:'I', label:'Current', symbol:'I', unit:'A', ph:'2' }
+        ],
+        calc: (v) => ({ result: v.V * v.I, unit:'W', name:'Power', formula:'P = V × I',
+          all: [{l:'Power (P)',v:(v.V*v.I).toFixed(4),u:'W'},{l:'Voltage',v:v.V,u:'V'},{l:'Current',v:v.I,u:'A'}] })
+      },
+      { label: "P = I² × R", formula: "P = I² × R", solve: "SOLVE FOR P",
+        inputs: [
+          { id:'I', label:'Current', symbol:'I', unit:'A', ph:'2' },
+          { id:'R', label:'Resistance', symbol:'R', unit:'Ω', ph:'10' }
+        ],
+        calc: (v) => ({ result: v.I*v.I*v.R, unit:'W', name:'Power', formula:'P = I² × R',
+          all: [{l:'Power (P)',v:(v.I*v.I*v.R).toFixed(4),u:'W'},{l:'Current',v:v.I,u:'A'},{l:'Resistance',v:v.R,u:'Ω'}] })
+      },
+      { label: "P = V² / R", formula: "P = V² / R", solve: "SOLVE FOR P",
+        inputs: [
+          { id:'V', label:'Voltage', symbol:'V', unit:'V', ph:'12' },
+          { id:'R', label:'Resistance', symbol:'R', unit:'Ω', ph:'10' }
+        ],
+        calc: (v) => ({ result: v.V*v.V/v.R, unit:'W', name:'Power', formula:'P = V² / R',
+          all: [{l:'Power (P)',v:(v.V*v.V/v.R).toFixed(4),u:'W'},{l:'Voltage',v:v.V,u:'V'},{l:'Resistance',v:v.R,u:'Ω'}] })
+      },
+      { label: "Find Voltage", formula: "V = P / I", solve: "SOLVE FOR V",
+        inputs: [
+          { id:'P', label:'Power', symbol:'P', unit:'W', ph:'24' },
+          { id:'I', label:'Current', symbol:'I', unit:'A', ph:'2' }
+        ],
+        calc: (v) => ({ result: v.P/v.I, unit:'V', name:'Voltage', formula:'V = P / I',
+          all: [{l:'Voltage (V)',v:(v.P/v.I).toFixed(4),u:'V'},{l:'Power',v:v.P,u:'W'},{l:'Current',v:v.I,u:'A'}] })
+      }
+    ]
+  },
+  {
+    id: 'kcl',
+    icon: '🔀',
+    name: "Kirchhoff's Current Law",
+    desc: "Sum of currents entering a node = Sum leaving",
+    tag: "ΣI_in = ΣI_out",
+    variants: [
+      { label: "2 Incoming, Find Outgoing", formula: "I_out = I₁ + I₂", solve: "SOLVE FOR I_out",
+        inputs: [
+          { id:'I1', label:'Current 1 (in)', symbol:'I₁', unit:'A', ph:'3' },
+          { id:'I2', label:'Current 2 (in)', symbol:'I₂', unit:'A', ph:'2' }
+        ],
+        calc: (v) => ({ result: v.I1+v.I2, unit:'A', name:'Outgoing Current', formula:'I_out = I₁ + I₂',
+          all: [{l:'I_out',v:(v.I1+v.I2).toFixed(4),u:'A'},{l:'I₁',v:v.I1,u:'A'},{l:'I₂',v:v.I2,u:'A'}] })
+      },
+      { label: "3 Incoming, Find Outgoing", formula: "I_out = I₁+I₂+I₃", solve: "SOLVE FOR I_out",
+        inputs: [
+          { id:'I1', label:'Current 1 (in)', symbol:'I₁', unit:'A', ph:'3' },
+          { id:'I2', label:'Current 2 (in)', symbol:'I₂', unit:'A', ph:'2' },
+          { id:'I3', label:'Current 3 (in)', symbol:'I₃', unit:'A', ph:'1' }
+        ],
+        calc: (v) => ({ result: v.I1+v.I2+v.I3, unit:'A', name:'Outgoing Current', formula:'I_out = I₁+I₂+I₃',
+          all: [{l:'I_out',v:(v.I1+v.I2+v.I3).toFixed(4),u:'A'},{l:'I₁',v:v.I1,u:'A'},{l:'I₂',v:v.I2,u:'A'},{l:'I₃',v:v.I3,u:'A'}] })
+      },
+      { label: "Find Missing Branch Current", formula: "I_x = I_total - I_known", solve: "SOLVE FOR I_x",
+        inputs: [
+          { id:'It', label:'Total Current (in)', symbol:'I_total', unit:'A', ph:'10' },
+          { id:'Ik', label:'Known Branch (out)', symbol:'I_known', unit:'A', ph:'6' }
+        ],
+        calc: (v) => ({ result: v.It - v.Ik, unit:'A', name:'Missing Branch Current', formula:'I_x = I_total - I_known',
+          all: [{l:'I_x',v:(v.It-v.Ik).toFixed(4),u:'A'},{l:'I_total',v:v.It,u:'A'},{l:'I_known',v:v.Ik,u:'A'}] })
+      }
+    ]
+  },
+  {
+    id: 'kvl',
+    icon: '🔁',
+    name: "Kirchhoff's Voltage Law",
+    desc: "Sum of all voltages around a closed loop = 0",
+    tag: "ΣV = 0",
+    variants: [
+      { label: "Find Unknown Voltage (2 drops)", formula: "V_s = V₁ + V₂ + V_x", solve: "SOLVE FOR V_x",
+        inputs: [
+          { id:'Vs', label:'Source Voltage', symbol:'V_s', unit:'V', ph:'12' },
+          { id:'V1', label:'Drop 1', symbol:'V₁', unit:'V', ph:'4' },
+          { id:'V2', label:'Drop 2', symbol:'V₂', unit:'V', ph:'3' }
+        ],
+        calc: (v) => ({ result: v.Vs - v.V1 - v.V2, unit:'V', name:'Unknown Voltage V_x', formula:'V_x = V_s − V₁ − V₂',
+          all: [{l:'V_x',v:(v.Vs-v.V1-v.V2).toFixed(4),u:'V'},{l:'V_s',v:v.Vs,u:'V'},{l:'V₁',v:v.V1,u:'V'},{l:'V₂',v:v.V2,u:'V'}] })
+      },
+      { label: "Find Unknown Voltage (3 drops)", formula: "V_x = V_s−V₁−V₂−V₃", solve: "SOLVE FOR V_x",
+        inputs: [
+          { id:'Vs', label:'Source Voltage', symbol:'V_s', unit:'V', ph:'24' },
+          { id:'V1', label:'Drop 1', symbol:'V₁', unit:'V', ph:'8' },
+          { id:'V2', label:'Drop 2', symbol:'V₂', unit:'V', ph:'6' },
+          { id:'V3', label:'Drop 3', symbol:'V₃', unit:'V', ph:'4' }
+        ],
+        calc: (v) => ({ result: v.Vs-v.V1-v.V2-v.V3, unit:'V', name:'Unknown Voltage V_x', formula:'V_x = V_s−V₁−V₂−V₃',
+          all: [{l:'V_x',v:(v.Vs-v.V1-v.V2-v.V3).toFixed(4),u:'V'},{l:'V_s',v:v.Vs,u:'V'}] })
+      },
+      { label: "Verify Loop (check = 0?)", formula: "V_s − V₁ − V₂ = ?", solve: "VERIFY LOOP",
+        inputs: [
+          { id:'Vs', label:'Source Voltage', symbol:'V_s', unit:'V', ph:'12' },
+          { id:'V1', label:'Drop 1', symbol:'V₁', unit:'V', ph:'7' },
+          { id:'V2', label:'Drop 2', symbol:'V₂', unit:'V', ph:'5' }
+        ],
+        calc: (v) => {
+          const net = v.Vs - v.V1 - v.V2;
+          return { result: Math.abs(net) < 0.0001 ? 0 : net, unit:'V', name:'Net Loop Voltage', formula:'V_s − V₁ − V₂',
+            all: [{l:'Net (should=0)',v:net.toFixed(6),u:'V'},{l:'Status',v:Math.abs(net)<0.001?'✓ VALID':'✗ CHECK VALUES',u:''}] }
+        }
+      }
+    ]
+  },
+  {
+    id: 'capacitor',
+    icon: '🔌',
+    name: "Capacitor Laws",
+    desc: "Charge, energy and time constant for capacitors",
+    tag: "Q = C·V",
+    variants: [
+      { label: "Find Charge", formula: "Q = C × V", solve: "SOLVE FOR Q",
+        inputs: [
+          { id:'C', label:'Capacitance', symbol:'C', unit:'F', ph:'0.001' },
+          { id:'V', label:'Voltage', symbol:'V', unit:'V', ph:'12' }
+        ],
+        calc: (v) => ({ result: v.C*v.V, unit:'C', name:'Charge', formula:'Q = C × V',
+          all: [{l:'Charge (Q)',v:(v.C*v.V).toFixed(6),u:'C'},{l:'Capacitance',v:v.C,u:'F'},{l:'Voltage',v:v.V,u:'V'}] })
+      },
+      { label: "Find Energy Stored", formula: "E = ½·C·V²", solve: "SOLVE FOR E",
+        inputs: [
+          { id:'C', label:'Capacitance', symbol:'C', unit:'F', ph:'0.001' },
+          { id:'V', label:'Voltage', symbol:'V', unit:'V', ph:'12' }
+        ],
+        calc: (v) => ({ result: 0.5*v.C*v.V*v.V, unit:'J', name:'Energy Stored', formula:'E = ½·C·V²',
+          all: [{l:'Energy (E)',v:(0.5*v.C*v.V*v.V).toFixed(6),u:'J'},{l:'Capacitance',v:v.C,u:'F'},{l:'Voltage',v:v.V,u:'V'}] })
+      },
+      { label: "Series Capacitors", formula: "1/C_eq=1/C₁+1/C₂", solve: "SOLVE FOR C_eq",
+        inputs: [
+          { id:'C1', label:'Capacitor 1', symbol:'C₁', unit:'F', ph:'0.01' },
+          { id:'C2', label:'Capacitor 2', symbol:'C₂', unit:'F', ph:'0.02' }
+        ],
+        calc: (v) => ({ result: 1/(1/v.C1+1/v.C2), unit:'F', name:'Equivalent Capacitance', formula:'1/C_eq = 1/C₁ + 1/C₂',
+          all: [{l:'C_eq',v:(1/(1/v.C1+1/v.C2)).toFixed(6),u:'F'},{l:'C₁',v:v.C1,u:'F'},{l:'C₂',v:v.C2,u:'F'}] })
+      },
+      { label: "Parallel Capacitors", formula: "C_eq = C₁ + C₂", solve: "SOLVE FOR C_eq",
+        inputs: [
+          { id:'C1', label:'Capacitor 1', symbol:'C₁', unit:'F', ph:'0.01' },
+          { id:'C2', label:'Capacitor 2', symbol:'C₂', unit:'F', ph:'0.02' }
+        ],
+        calc: (v) => ({ result: v.C1+v.C2, unit:'F', name:'Equivalent Capacitance', formula:'C_eq = C₁ + C₂',
+          all: [{l:'C_eq',v:(v.C1+v.C2).toFixed(6),u:'F'},{l:'C₁',v:v.C1,u:'F'},{l:'C₂',v:v.C2,u:'F'}] })
+      },
+      { label: "RC Time Constant", formula: "τ = R × C", solve: "SOLVE FOR τ",
+        inputs: [
+          { id:'R', label:'Resistance', symbol:'R', unit:'Ω', ph:'1000' },
+          { id:'C', label:'Capacitance', symbol:'C', unit:'F', ph:'0.001' }
+        ],
+        calc: (v) => ({ result: v.R*v.C, unit:'s', name:'Time Constant (τ)', formula:'τ = R × C',
+          all: [{l:'τ (tau)',v:(v.R*v.C).toFixed(6),u:'s'},{l:'5τ (full charge)',v:(5*v.R*v.C).toFixed(4),u:'s'},{l:'R',v:v.R,u:'Ω'},{l:'C',v:v.C,u:'F'}] })
+      }
+    ]
+  },
+  {
+    id: 'inductor',
+    icon: '🌀',
+    name: "Inductor Laws",
+    desc: "Inductance, energy and RL time constant",
+    tag: "V = L·dI/dt",
+    variants: [
+      { label: "Find EMF (Induced Voltage)", formula: "V = L × (ΔI/Δt)", solve: "SOLVE FOR V",
+        inputs: [
+          { id:'L', label:'Inductance', symbol:'L', unit:'H', ph:'0.5' },
+          { id:'dI', label:'Change in Current (ΔI)', symbol:'ΔI', unit:'A', ph:'4' },
+          { id:'dt', label:'Change in Time (Δt)', symbol:'Δt', unit:'s', ph:'0.01' }
+        ],
+        calc: (v) => ({ result: v.L*(v.dI/v.dt), unit:'V', name:'Induced EMF', formula:'V = L × (ΔI/Δt)',
+          all: [{l:'EMF (V)',v:(v.L*v.dI/v.dt).toFixed(4),u:'V'},{l:'Inductance',v:v.L,u:'H'},{l:'ΔI',v:v.dI,u:'A'},{l:'Δt',v:v.dt,u:'s'}] })
+      },
+      { label: "Find Energy Stored", formula: "E = ½·L·I²", solve: "SOLVE FOR E",
+        inputs: [
+          { id:'L', label:'Inductance', symbol:'L', unit:'H', ph:'0.5' },
+          { id:'I', label:'Current', symbol:'I', unit:'A', ph:'3' }
+        ],
+        calc: (v) => ({ result: 0.5*v.L*v.I*v.I, unit:'J', name:'Energy Stored', formula:'E = ½·L·I²',
+          all: [{l:'Energy (E)',v:(0.5*v.L*v.I*v.I).toFixed(6),u:'J'},{l:'Inductance',v:v.L,u:'H'},{l:'Current',v:v.I,u:'A'}] })
+      },
+      { label: "RL Time Constant", formula: "τ = L / R", solve: "SOLVE FOR τ",
+        inputs: [
+          { id:'L', label:'Inductance', symbol:'L', unit:'H', ph:'0.5' },
+          { id:'R', label:'Resistance', symbol:'R', unit:'Ω', ph:'100' }
+        ],
+        calc: (v) => ({ result: v.L/v.R, unit:'s', name:'Time Constant (τ)', formula:'τ = L / R',
+          all: [{l:'τ (tau)',v:(v.L/v.R).toFixed(6),u:'s'},{l:'5τ',v:(5*v.L/v.R).toFixed(6),u:'s'},{l:'L',v:v.L,u:'H'},{l:'R',v:v.R,u:'Ω'}] })
+      },
+      { label: "Series Inductors", formula: "L_eq = L₁ + L₂", solve: "SOLVE FOR L_eq",
+        inputs: [
+          { id:'L1', label:'Inductor 1', symbol:'L₁', unit:'H', ph:'0.2' },
+          { id:'L2', label:'Inductor 2', symbol:'L₂', unit:'H', ph:'0.3' }
+        ],
+        calc: (v) => ({ result: v.L1+v.L2, unit:'H', name:'Equivalent Inductance', formula:'L_eq = L₁ + L₂',
+          all: [{l:'L_eq',v:(v.L1+v.L2).toFixed(6),u:'H'},{l:'L₁',v:v.L1,u:'H'},{l:'L₂',v:v.L2,u:'H'}] })
+      }
+    ]
+  },
+  {
+    id: 'faraday',
+    icon: '🧲',
+    name: "Faraday's Law",
+    desc: "Electromagnetic induction — EMF from changing flux",
+    tag: "EMF = -NΔΦ/Δt",
+    variants: [
+      { label: "Find Induced EMF", formula: "EMF = N × (ΔΦ/Δt)", solve: "SOLVE FOR EMF",
+        inputs: [
+          { id:'N', label:'No. of Turns', symbol:'N', unit:'turns', ph:'200' },
+          { id:'dPhi', label:'Change in Flux (ΔΦ)', symbol:'ΔΦ', unit:'Wb', ph:'0.05' },
+          { id:'dt', label:'Change in Time (Δt)', symbol:'Δt', unit:'s', ph:'0.01' }
+        ],
+        calc: (v) => ({ result: v.N*(v.dPhi/v.dt), unit:'V', name:'Induced EMF', formula:'EMF = N × (ΔΦ/Δt)',
+          all: [{l:'EMF',v:(v.N*v.dPhi/v.dt).toFixed(4),u:'V'},{l:'Turns (N)',v:v.N,u:''},{l:'ΔΦ',v:v.dPhi,u:'Wb'},{l:'Δt',v:v.dt,u:'s'}] })
+      },
+      { label: "Find Magnetic Flux", formula: "Φ = B × A", solve: "SOLVE FOR Φ",
+        inputs: [
+          { id:'B', label:'Magnetic Field', symbol:'B', unit:'T', ph:'0.5' },
+          { id:'A', label:'Area', symbol:'A', unit:'m²', ph:'0.02' }
+        ],
+        calc: (v) => ({ result: v.B*v.A, unit:'Wb', name:'Magnetic Flux', formula:'Φ = B × A',
+          all: [{l:'Flux (Φ)',v:(v.B*v.A).toFixed(6),u:'Wb'},{l:'B',v:v.B,u:'T'},{l:'A',v:v.A,u:'m²'}] })
+      }
+    ]
+  },
+  {
+    id: 'resonance',
+    icon: '〰️',
+    name: "Resonance Frequency",
+    desc: "LC circuit resonance and impedance",
+    tag: "f = 1/(2π√LC)",
+    variants: [
+      { label: "Find Resonant Frequency", formula: "f = 1/(2π√(LC))", solve: "SOLVE FOR f",
+        inputs: [
+          { id:'L', label:'Inductance', symbol:'L', unit:'H', ph:'0.01' },
+          { id:'C', label:'Capacitance', symbol:'C', unit:'F', ph:'0.0001' }
+        ],
+        calc: (v) => {
+          const f = 1/(2*Math.PI*Math.sqrt(v.L*v.C));
+          return { result: f, unit:'Hz', name:'Resonant Frequency', formula:'f = 1/(2π√LC)',
+            all: [{l:'Frequency (f)',v:f.toFixed(4),u:'Hz'},{l:'ω = 2πf',v:(2*Math.PI*f).toFixed(4),u:'rad/s'},{l:'L',v:v.L,u:'H'},{l:'C',v:v.C,u:'F'}] }
+        }
+      },
+      { label: "Find Inductive Reactance", formula: "X_L = 2π × f × L", solve: "SOLVE FOR X_L",
+        inputs: [
+          { id:'f', label:'Frequency', symbol:'f', unit:'Hz', ph:'50' },
+          { id:'L', label:'Inductance', symbol:'L', unit:'H', ph:'0.1' }
+        ],
+        calc: (v) => ({ result: 2*Math.PI*v.f*v.L, unit:'Ω', name:'Inductive Reactance', formula:'X_L = 2πfL',
+          all: [{l:'X_L',v:(2*Math.PI*v.f*v.L).toFixed(4),u:'Ω'},{l:'f',v:v.f,u:'Hz'},{l:'L',v:v.L,u:'H'}] })
+      },
+      { label: "Find Capacitive Reactance", formula: "X_C = 1/(2π×f×C)", solve: "SOLVE FOR X_C",
+        inputs: [
+          { id:'f', label:'Frequency', symbol:'f', unit:'Hz', ph:'50' },
+          { id:'C', label:'Capacitance', symbol:'C', unit:'F', ph:'0.0001' }
+        ],
+        calc: (v) => ({ result: 1/(2*Math.PI*v.f*v.C), unit:'Ω', name:'Capacitive Reactance', formula:'X_C = 1/(2πfC)',
+          all: [{l:'X_C',v:(1/(2*Math.PI*v.f*v.C)).toFixed(4),u:'Ω'},{l:'f',v:v.f,u:'Hz'},{l:'C',v:v.C,u:'F'}] })
+      }
+    ]
+  },
+  {
+    id: 'resistors',
+    icon: '📏',
+    name: "Resistor Combinations",
+    desc: "Series and parallel equivalent resistance",
+    tag: "R_eq",
+    variants: [
+      { label: "2 Resistors — Series", formula: "R_eq = R₁ + R₂", solve: "SOLVE FOR R_eq",
+        inputs: [
+          { id:'R1', label:'Resistor 1', symbol:'R₁', unit:'Ω', ph:'100' },
+          { id:'R2', label:'Resistor 2', symbol:'R₂', unit:'Ω', ph:'220' }
+        ],
+        calc: (v) => ({ result: v.R1+v.R2, unit:'Ω', name:'Equivalent Resistance', formula:'R_eq = R₁ + R₂',
+          all: [{l:'R_eq',v:(v.R1+v.R2).toFixed(4),u:'Ω'},{l:'R₁',v:v.R1,u:'Ω'},{l:'R₂',v:v.R2,u:'Ω'}] })
+      },
+      { label: "3 Resistors — Series", formula: "R_eq = R₁+R₂+R₃", solve: "SOLVE FOR R_eq",
+        inputs: [
+          { id:'R1', label:'Resistor 1', symbol:'R₁', unit:'Ω', ph:'100' },
+          { id:'R2', label:'Resistor 2', symbol:'R₂', unit:'Ω', ph:'220' },
+          { id:'R3', label:'Resistor 3', symbol:'R₃', unit:'Ω', ph:'330' }
+        ],
+        calc: (v) => ({ result: v.R1+v.R2+v.R3, unit:'Ω', name:'Equivalent Resistance', formula:'R_eq = R₁+R₂+R₃',
+          all: [{l:'R_eq',v:(v.R1+v.R2+v.R3).toFixed(4),u:'Ω'}] })
+      },
+      { label: "2 Resistors — Parallel", formula: "R_eq = (R₁×R₂)/(R₁+R₂)", solve: "SOLVE FOR R_eq",
+        inputs: [
+          { id:'R1', label:'Resistor 1', symbol:'R₁', unit:'Ω', ph:'100' },
+          { id:'R2', label:'Resistor 2', symbol:'R₂', unit:'Ω', ph:'100' }
+        ],
+        calc: (v) => ({ result: (v.R1*v.R2)/(v.R1+v.R2), unit:'Ω', name:'Equivalent Resistance', formula:'R_eq = (R₁·R₂)/(R₁+R₂)',
+          all: [{l:'R_eq',v:((v.R1*v.R2)/(v.R1+v.R2)).toFixed(4),u:'Ω'},{l:'R₁',v:v.R1,u:'Ω'},{l:'R₂',v:v.R2,u:'Ω'}] })
+      },
+      { label: "3 Resistors — Parallel", formula: "1/R_eq=1/R₁+1/R₂+1/R₃", solve: "SOLVE FOR R_eq",
+        inputs: [
+          { id:'R1', label:'Resistor 1', symbol:'R₁', unit:'Ω', ph:'100' },
+          { id:'R2', label:'Resistor 2', symbol:'R₂', unit:'Ω', ph:'200' },
+          { id:'R3', label:'Resistor 3', symbol:'R₃', unit:'Ω', ph:'300' }
+        ],
+        calc: (v) => ({ result: 1/(1/v.R1+1/v.R2+1/v.R3), unit:'Ω', name:'Equivalent Resistance', formula:'1/R_eq=1/R₁+1/R₂+1/R₃',
+          all: [{l:'R_eq',v:(1/(1/v.R1+1/v.R2+1/v.R3)).toFixed(4),u:'Ω'}] })
+      }
+    ]
+  },
+  {
+    id: 'thevenin',
+    icon: '🔧',
+    name: "Thevenin's Theorem",
+    desc: "Simplify circuit to V_th and R_th",
+    tag: "V_th, R_th",
+    variants: [
+      { label: "Find Thevenin Voltage", formula: "V_th = V_s × R_L/(R+R_L)", solve: "SOLVE FOR V_th",
+        inputs: [
+          { id:'Vs', label:'Source Voltage', symbol:'V_s', unit:'V', ph:'12' },
+          { id:'R', label:'Series Resistance', symbol:'R', unit:'Ω', ph:'100' },
+          { id:'RL', label:'Load Resistance', symbol:'R_L', unit:'Ω', ph:'200' }
+        ],
+        calc: (v) => ({ result: v.Vs*v.RL/(v.R+v.RL), unit:'V', name:"Thevenin Voltage (V_th)", formula:'V_th = V_s × R_L/(R+R_L)',
+          all: [{l:'V_th',v:(v.Vs*v.RL/(v.R+v.RL)).toFixed(4),u:'V'},{l:'V_s',v:v.Vs,u:'V'},{l:'R',v:v.R,u:'Ω'},{l:'R_L',v:v.RL,u:'Ω'}] })
+      },
+      { label: "Load Current from Thevenin", formula: "I_L = V_th / (R_th + R_L)", solve: "SOLVE FOR I_L",
+        inputs: [
+          { id:'Vth', label:'Thevenin Voltage', symbol:'V_th', unit:'V', ph:'8' },
+          { id:'Rth', label:'Thevenin Resistance', symbol:'R_th', unit:'Ω', ph:'50' },
+          { id:'RL', label:'Load Resistance', symbol:'R_L', unit:'Ω', ph:'100' }
+        ],
+        calc: (v) => ({ result: v.Vth/(v.Rth+v.RL), unit:'A', name:'Load Current', formula:'I_L = V_th / (R_th + R_L)',
+          all: [{l:'I_L',v:(v.Vth/(v.Rth+v.RL)).toFixed(6),u:'A'},{l:'V_L',v:(v.Vth*v.RL/(v.Rth+v.RL)).toFixed(4),u:'V'},{l:'P_L',v:(Math.pow(v.Vth/(v.Rth+v.RL),2)*v.RL).toFixed(4),u:'W'}] })
+      }
+    ]
+  },
+  {
+    id: 'divider',
+    icon: '➗',
+    name: "Voltage & Current Divider",
+    desc: "Divide voltage or current in resistor networks",
+    tag: "Divider Rule",
+    variants: [
+      { label: "Voltage Divider", formula: "V_out = V_in × R₂/(R₁+R₂)", solve: "SOLVE FOR V_out",
+        inputs: [
+          { id:'Vin', label:'Input Voltage', symbol:'V_in', unit:'V', ph:'12' },
+          { id:'R1', label:'Resistor 1', symbol:'R₁', unit:'Ω', ph:'1000' },
+          { id:'R2', label:'Resistor 2', symbol:'R₂', unit:'Ω', ph:'2000' }
+        ],
+        calc: (v) => ({ result: v.Vin*v.R2/(v.R1+v.R2), unit:'V', name:'Output Voltage', formula:'V_out = V_in × R₂/(R₁+R₂)',
+          all: [{l:'V_out',v:(v.Vin*v.R2/(v.R1+v.R2)).toFixed(4),u:'V'},{l:'Ratio',v:(v.R2/(v.R1+v.R2)*100).toFixed(2),u:'%'},{l:'V_in',v:v.Vin,u:'V'}] })
+      },
+      { label: "Current Divider (2 branches)", formula: "I₁ = I_T × R₂/(R₁+R₂)", solve: "SOLVE FOR I₁",
+        inputs: [
+          { id:'It', label:'Total Current', symbol:'I_T', unit:'A', ph:'6' },
+          { id:'R1', label:'Branch 1 Resistance', symbol:'R₁', unit:'Ω', ph:'100' },
+          { id:'R2', label:'Branch 2 Resistance', symbol:'R₂', unit:'Ω', ph:'200' }
+        ],
+        calc: (v) => ({
+          result: v.It * v.R2 / (v.R1 + v.R2),
+          unit:'A', name:'Branch 1 Current', formula:'I₁ = I_T × R₂/(R₁+R₂)',
+          all: [
+            {l:'I₁ (branch 1)',v:(v.It*v.R2/(v.R1+v.R2)).toFixed(4),u:'A'},
+            {l:'I₂ (branch 2)',v:(v.It*v.R1/(v.R1+v.R2)).toFixed(4),u:'A'},
+            {l:'I_T',v:v.It,u:'A'}
+          ]
+        })
+      }
+    ]
+  },
+  {
+    id: 'charge',
+    icon: '⚛️',
+    name: "Electric Charge & Field",
+    desc: "Coulomb's law, electric field and potential",
+    tag: "F = kQ₁Q₂/r²",
+    variants: [
+      { label: "Coulomb's Force", formula: "F = k·Q₁·Q₂ / r²", solve: "SOLVE FOR F",
+        inputs: [
+          { id:'Q1', label:'Charge 1', symbol:'Q₁', unit:'C', ph:'0.001' },
+          { id:'Q2', label:'Charge 2', symbol:'Q₂', unit:'C', ph:'0.002' },
+          { id:'r', label:'Distance', symbol:'r', unit:'m', ph:'0.1' }
+        ],
+        calc: (v) => {
+          const k = 8.99e9;
+          return { result: k*v.Q1*v.Q2/(v.r*v.r), unit:'N', name:"Coulomb's Force", formula:'F = 8.99×10⁹ × Q₁Q₂/r²',
+            all: [{l:'Force (F)',v:(k*v.Q1*v.Q2/(v.r*v.r)).toExponential(4),u:'N'},{l:'Q₁',v:v.Q1,u:'C'},{l:'Q₂',v:v.Q2,u:'C'},{l:'r',v:v.r,u:'m'}] }
+        }
+      },
+      { label: "Electric Field", formula: "E = F / Q = kQ/r²", solve: "SOLVE FOR E",
+        inputs: [
+          { id:'Q', label:'Source Charge', symbol:'Q', unit:'C', ph:'0.001' },
+          { id:'r', label:'Distance', symbol:'r', unit:'m', ph:'0.1' }
+        ],
+        calc: (v) => {
+          const k = 8.99e9;
+          return { result: k*v.Q/(v.r*v.r), unit:'N/C', name:'Electric Field', formula:'E = kQ/r²',
+            all: [{l:'E (field)',v:(k*v.Q/(v.r*v.r)).toExponential(4),u:'N/C'},{l:'Q',v:v.Q,u:'C'},{l:'r',v:v.r,u:'m'}] }
+        }
+      },
+      { label: "Electric Potential", formula: "V = kQ / r", solve: "SOLVE FOR V",
+        inputs: [
+          { id:'Q', label:'Charge', symbol:'Q', unit:'C', ph:'0.001' },
+          { id:'r', label:'Distance', symbol:'r', unit:'m', ph:'0.1' }
+        ],
+        calc: (v) => {
+          const k = 8.99e9;
+          return { result: k*v.Q/v.r, unit:'V', name:'Electric Potential', formula:'V = kQ/r',
+            all: [{l:'Potential (V)',v:(k*v.Q/v.r).toExponential(4),u:'V'},{l:'Q',v:v.Q,u:'C'},{l:'r',v:v.r,u:'m'}] }
+        }
+      }
+    ]
+  }
+];
+
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let selectedLaw = null;
+let selectedVariant = null;
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+function init() {
+  const grid = document.getElementById('lawGrid');
+  grid.innerHTML = '';
+  LAWS.forEach(law => {
+    const btn = document.createElement('div');
+    btn.className = 'law-btn';
+    btn.innerHTML = `
+      <span class="law-icon">${law.icon}</span>
+      <div class="law-name">${law.name}</div>
+      <div class="law-desc">${law.desc}</div>
+      <span class="law-tag">${law.tag}</span>
+    `;
+    btn.onclick = () => selectLaw(law);
+    grid.appendChild(btn);
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  STEP NAVIGATION
+// ═══════════════════════════════════════════════
+function goStep(n) {
+  [1,2,3,4].forEach(i => {
+    document.getElementById('step'+i).classList.toggle('hidden', i !== n);
+    const s = document.getElementById('s'+i);
+    s.classList.remove('active','done');
+    if (i < n) s.classList.add('done');
+    else if (i === n) s.classList.add('active');
+  });
+  if (n === 4) document.getElementById('step4').classList.add('visible');
+}
+
+// ═══════════════════════════════════════════════
+//  SELECT LAW → STEP 2
+// ═══════════════════════════════════════════════
+function selectLaw(law) {
+  selectedLaw = law;
+  document.getElementById('variantTitle').textContent = `${law.icon} ${law.name} — Choose Formula`;
+  const grid = document.getElementById('variantGrid');
+  grid.innerHTML = '';
+  law.variants.forEach((v, i) => {
+    const btn = document.createElement('div');
+    btn.className = 'var-btn';
+    btn.innerHTML = `<span class="var-formula">${v.formula}</span><span class="var-solve">${v.solve}</span>`;
+    btn.onclick = () => selectVariant(v, btn);
+    grid.appendChild(btn);
+  });
+  goStep(2);
+}
+
+// ═══════════════════════════════════════════════
+//  SELECT VARIANT → STEP 3
+// ═══════════════════════════════════════════════
+function selectVariant(variant, btn) {
+  selectedVariant = variant;
+  document.querySelectorAll('.var-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+
+  document.getElementById('inputTitle').textContent = `${selectedLaw.icon} ${variant.formula} — Enter Values`;
+  const grid = document.getElementById('inputGrid');
+  grid.innerHTML = '';
+
+  variant.inputs.forEach(inp => {
+    const field = document.createElement('div');
+    field.className = 'field';
+    field.innerHTML = `
+      <label><span>${inp.symbol}</span> — ${inp.label}</label>
+      <div class="inp-wrap">
+        <input type="number" id="inp_${inp.id}" placeholder="${inp.ph}" step="any" autocomplete="off"/>
+        <span class="inp-unit">${inp.unit}</span>
+      </div>
+    `;
+    grid.appendChild(field);
+  });
+
+  document.getElementById('errorMsg').textContent = '';
+  goStep(3);
+
+  // Focus first input
+  setTimeout(() => {
+    const first = document.querySelector('#inputGrid input');
+    if (first) first.focus();
+  }, 100);
+}
+
+// ═══════════════════════════════════════════════
+//  CALCULATE → STEP 4
+// ═══════════════════════════════════════════════
+function calculate() {
+  const vals = {};
+  let valid = true;
+
+  selectedVariant.inputs.forEach(inp => {
+    const el = document.getElementById('inp_' + inp.id);
+    const val = parseFloat(el.value);
+    if (isNaN(val)) { valid = false; el.focus(); }
+    vals[inp.id] = val;
+  });
+
+  if (!valid) {
+    document.getElementById('errorMsg').textContent = '✗ Please fill all fields with valid numbers';
+    return;
+  }
+
+  // Check division by zero
+  for (let k in vals) { if (vals[k] === 0 && (k === 'R' || k === 'r' || k === 'dt' || k === 'C' || k === 'L')) {
+    document.getElementById('errorMsg').textContent = '✗ Value cannot be zero for this calculation';
+    return;
+  }}
+
+  document.getElementById('errorMsg').textContent = '';
+
+  let res;
+  try { res = selectedVariant.calc(vals); }
+  catch(e) { document.getElementById('errorMsg').textContent = '✗ Calculation error: ' + e.message; return; }
+
+  // Display
+  const val = res.result;
+  let displayVal;
+  if (Math.abs(val) >= 1e6 || (Math.abs(val) < 0.001 && val !== 0)) {
+    displayVal = val.toExponential(4);
+  } else {
+    displayVal = parseFloat(val.toFixed(6)).toString();
+  }
+
+  document.getElementById('resLabel').textContent = res.name;
+  document.getElementById('resValue').textContent = displayVal;
+  document.getElementById('resUnit').textContent = res.unit;
+  document.getElementById('resFormula').textContent = res.formula;
+  document.getElementById('resMeta').textContent = `${selectedLaw.name}`;
+
+  const allDiv = document.getElementById('allResults');
+  allDiv.innerHTML = '';
+  if (res.all && res.all.length > 1) {
+    res.all.forEach(item => {
+      const d = document.createElement('div');
+      d.className = 'mini-result';
+      d.innerHTML = `<div class="mr-label">${item.l}</div><div class="mr-value">${item.v} <span class="mr-unit">${item.u}</span></div>`;
+      allDiv.appendChild(d);
+    });
+  }
+
+  goStep(4);
+  document.getElementById('step4').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Enter key to calculate
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const s3 = document.getElementById('step3');
+    if (!s3.classList.contains('hidden')) calculate();
+  }
+});
+
+init();
+</script>
+</body>
+</html>
